@@ -1,0 +1,16 @@
+{
+  "name": "reddit_api",
+  "version": "1.0.0",
+  "description": "api for reddit clone front end",
+  "main": "index.js",
+  "author": "kgilla",
+  "license": "MIT",
+  "scripts": {
+    "start": "node ./index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.10.19"
+  }
+}
