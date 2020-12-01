@@ -1,5 +1,7 @@
 const { Comment, Post, Sub, User } = require("../models");
 
-exports.getIndex = (req, res, next) => {
-  res.send("Hello comments");
-};
+exports.create = async (req, res, next) => {};
+
+exports.update = async (req, res, next) => {};
+
+exports.delete = async (req, res, next) => {};
