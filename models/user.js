@@ -1,5 +1,3 @@
-// Username, password, email, date joined, subs, karma, bio section - picture ? , details, posts, comments
-
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 

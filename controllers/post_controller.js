@@ -6,19 +6,19 @@ exports.create = [
   body("content").isLength({ min: 1 }),
   async (req, res) => {
     const errors = validationResult(req);
-    const { title, content, subID } = req.body;
     if (!errors.isEmpty()) {
       return res.status(400).json({
         errors: errors.array(),
       });
     }
-    const post = new Post({
-      title,
-      content,
-      author: req.user._id,
-      sub: subID,
-    });
     try {
+      const { title, content, subID } = req.body;
+      const post = new Post({
+        title,
+        content,
+        author: req.user._id,
+        sub: subID,
+      });
       const savedPost = await post.save();
       const [user, sub] = await Promise.all([
         User.findById(req.user._id).exec(),
@@ -40,17 +40,6 @@ exports.create = [
     }
   },
 ];
-
-exports.readAll = async (req, res, next) => {
-  try {
-    const posts = await Post.find().populate("author sub").exec();
-    res.status(200).json({
-      posts,
-    });
-  } catch (err) {
-    return next(err);
-  }
-};
 
 exports.read = async (req, res, next) => {
   try {

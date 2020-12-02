@@ -1,5 +1,3 @@
-// Name, description, date created, subscribers
-
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 

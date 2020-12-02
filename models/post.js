@@ -1,11 +1,10 @@
-// author, title, content, karma, comments
-
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const postSchema = new Schema({
   title: { type: String },
   content: { type: String },
+  score: { type: Number, default: 1 },
   dateCreated: { type: Date, default: Date.now() },
   dateEdited: { type: Date },
   author: { type: Schema.Types.ObjectId, ref: "User" },

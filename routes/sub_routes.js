@@ -9,19 +9,20 @@ router.post(
   sub_controller.create
 );
 
+router.get("/all", sub_controller.allPosts);
 router.get("/", sub_controller.readAll);
-
 router.get("/:name", sub_controller.read);
 
-router.post(
+router.put(
   ":name/update",
   passport.authenticate("jwt", { session: false }),
   sub_controller.update
 );
 
-// router.post(
-//   ":name/delete",
-//   passport.authenticate("jwt", { session: false }),
-//   sub_controller.delete
-// );
+router.delete(
+  ":name/delete",
+  passport.authenticate("jwt", { session: false }),
+  sub_controller.delete
+);
+
 module.exports = router;

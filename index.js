@@ -1,5 +1,4 @@
 const express = require("express");
-const routes = require("./routes");
 const passport = require("passport");
 
 // config files
@@ -24,11 +23,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname + "/public"));
 
-// routes
-app.use("/user", routes.user_routes);
-app.use("/comments", routes.comment_routes);
-app.use("/posts", routes.post_routes);
-app.use("/subs", routes.sub_routes);
+app.use("/api", require("./routes"));
 
 const PORT = process.env.PORT || 5000;
 

@@ -17,6 +17,7 @@ exports.create = async (req, res, next) => {
     return next(err);
   }
 };
+
 exports.readAll = async (req, res, next) => {
   try {
     const allSubs = await Sub.find();
@@ -35,6 +36,17 @@ exports.read = async (req, res, next) => {
       .exec();
     return res.status(200).json({
       sub,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.allPosts = async (req, res, next) => {
+  try {
+    const posts = await Post.find().populate("author sub").exec();
+    return res.status(200).json({
+      posts,
     });
   } catch (err) {
     return next(err);

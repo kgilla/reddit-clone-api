@@ -4,22 +4,59 @@ const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const { body, validationResult } = require("express-validator");
 
-exports.create = (req, res, next) => {
-  const { username, password } = req.body;
-  bcrypt.hash(password, 10, (err, hashedPassword) => {
-    if (err) return next(err);
-    new User({
-      username: username,
-      password: hashedPassword,
-    }).save((err, user) => {
-      if (err) return next(err);
-      res.status(201).json({
-        user,
-        message: "Saved successfully",
+exports.create = [
+  body("username")
+    .notEmpty()
+    .withMessage("Username is required")
+    .custom(async (value) => {
+      const user = await User.findOne({ username: value });
+      return user
+        ? Promise.reject("Username already in use.")
+        : Promise.resolve(true);
+    })
+    .trim(),
+  body("password")
+    .isLength({ min: 8, max: 60 })
+    .withMessage("Passwords must be at least 8 characters long."),
+  body("email")
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Must be valid email address")
+    .custom(async (value) => {
+      const user = await User.findOne({ email: value });
+      return user
+        ? Promise.reject("Email already in use.")
+        : Promise.resolve(true);
+    })
+    .trim()
+    .normalizeEmail(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        errors: errors.array(),
       });
-    });
-  });
-};
+    }
+    try {
+      const { username, password, email } = req.body;
+      bcrypt.hash(password, 10, async (err, hashedPassword) => {
+        const user = new User({
+          username: username,
+          password: hashedPassword,
+          email,
+        });
+        const response = await user.save();
+        res.status(201).json({
+          user: response,
+          message: "Saved successfully",
+        });
+      });
+    } catch (err) {
+      return next(err);
+    }
+  },
+];
 
 exports.read = async (req, res, next) => {
   try {
