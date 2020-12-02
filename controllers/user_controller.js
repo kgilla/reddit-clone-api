@@ -23,7 +23,7 @@ exports.create = (req, res, next) => {
 
 exports.read = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({ username: req.params.username });
     res.status(200).json({
       user,
     });

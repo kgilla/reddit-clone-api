@@ -5,10 +5,11 @@ const Schema = mongoose.Schema;
 
 const postSchema = new Schema({
   title: { type: String },
-  author: { type: Schema.Types.ObjectId, ref: "User" },
   content: { type: String },
   dateCreated: { type: Date, default: Date.now() },
   dateEdited: { type: Date },
+  author: { type: Schema.Types.ObjectId, ref: "User" },
+  sub: { type: Schema.Types.ObjectId, ref: "Sub" },
   comments: [{ type: Schema.Types.ObjectId, ref: "Comment" }],
 });
 

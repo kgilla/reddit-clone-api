@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname + "/public"));
 
 // routes
-app.use("/users", routes.user_routes);
+app.use("/user", routes.user_routes);
 app.use("/comments", routes.comment_routes);
 app.use("/posts", routes.post_routes);
 app.use("/subs", routes.sub_routes);
