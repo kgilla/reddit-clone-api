@@ -60,7 +60,9 @@ exports.create = [
 
 exports.read = async (req, res, next) => {
   try {
-    const user = await User.findOne({ username: req.params.username });
+    const user = await User.findOne({ username: req.params.username })
+      .populate("posts comments")
+      .exec();
     res.status(200).json({
       user,
     });

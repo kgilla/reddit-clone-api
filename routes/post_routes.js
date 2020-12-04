@@ -12,13 +12,13 @@ router.post(
 router.get("/:id", post_controller.read);
 
 router.put(
-  "/update/:id",
+  "/:id/update",
   passport.authenticate("jwt", { session: false }),
   post_controller.update
 );
 
 router.delete(
-  "/delete/:id",
+  "/:id/delete",
   passport.authenticate("jwt", { session: false }),
   post_controller.delete
 );

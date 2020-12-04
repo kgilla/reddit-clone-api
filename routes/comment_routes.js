@@ -9,16 +9,16 @@ router.post(
   comment_controller.create
 );
 
-router.get("/:id", comment_controller.read);
+router.get("/:commentID", comment_controller.read);
 
 router.put(
-  "/update/:id",
+  "/:commentID/update",
   passport.authenticate("jwt", { session: false }),
   comment_controller.update
 );
 
 router.delete(
-  "/delete/:id",
+  "/:commentID/delete",
   passport.authenticate("jwt", { session: false }),
   comment_controller.delete
 );

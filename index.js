@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const passport = require("passport");
 
 // config files
@@ -22,6 +23,7 @@ app.use(passport.initialize());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname + "/public"));
+app.use(cors());
 
 app.use("/api", require("./routes"));
 
