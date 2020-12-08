@@ -80,15 +80,18 @@ exports.login = (req, res, next) => {
     if (err) {
       res.status(400).json({
         message: info.message,
+        err,
+        name: info.name,
       });
     } else if (!user) {
       return res.status(401).json({
         user,
         message: info.message,
+        name: info.name,
       });
     } else {
       const token = jwt.sign({ user }, process.env.JWT_SECRET);
-      return res.status(200).json({ user, token, message: info.message });
+      return res.status(200).json({ user, token });
     }
   })(req, res);
 };

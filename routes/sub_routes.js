@@ -11,16 +11,16 @@ router.post(
 
 router.get("/all", sub_controller.allPosts);
 router.get("/", sub_controller.readAll);
-router.get("/:name", sub_controller.read);
+router.get("/:subID", sub_controller.read);
 
 router.put(
-  ":name/update",
+  ":subID/update",
   passport.authenticate("jwt", { session: false }),
   sub_controller.update
 );
 
 router.delete(
-  ":name/delete",
+  ":subID/delete",
   passport.authenticate("jwt", { session: false }),
   sub_controller.delete
 );

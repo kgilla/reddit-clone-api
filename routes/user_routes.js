@@ -3,6 +3,8 @@ const router = express.Router();
 const user_controller = require("../controllers/user_controller");
 const passport = require("passport");
 
+// Password change, username change?, deletion
+
 router.post("/create", user_controller.create);
 
 router.get(

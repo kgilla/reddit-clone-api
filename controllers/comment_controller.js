@@ -15,13 +15,13 @@ exports.create = [
       const comment = new Comment({
         content,
         author: req.user.id,
-        post: req.params.id,
+        post: req.params.postID,
         parent,
       });
       const response = await comment.save();
       const [author, post] = await Promise.all([
         User.findById(req.user.id),
-        Post.findById(req.params.id),
+        Post.findById(req.params.postID),
       ]);
       author.comments.push(comment);
       post.comments.push(comment);

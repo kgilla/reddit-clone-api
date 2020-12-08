@@ -2,8 +2,8 @@ const { Comment, Post, Sub, User } = require("../models");
 const { body, validationResult } = require("express-validator");
 
 exports.create = [
-  body("title").isLength({ min: 1, max: 100 }),
-  body("content").isLength({ min: 1, max: 360 }),
+  body("title").isLength({ min: 1, max: 300 }),
+  body("content").isLength({ max: 720 }),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -12,26 +12,26 @@ exports.create = [
       });
     }
     try {
-      const { title, content } = req.body;
+      const { sub, title, content } = req.body;
 
-      const [user, sub] = await Promise.all([
+      const [user, subDoc] = await Promise.all([
         User.findById(req.user._id).exec(),
-        Sub.findOne({ name: req.params.name }).exec(),
+        Sub.findById(sub).exec(),
       ]);
 
       const post = new Post({
         title,
         content,
         author: req.user._id,
-        sub: sub,
+        sub,
       });
 
       const savedPost = await post.save();
 
       user.posts.push(post._id);
-      sub.posts.push(post._id);
+      subDoc.posts.push(post._id);
 
-      await Promise.all([user.save(), sub.save()]);
+      await Promise.all([user.save(), subDoc.save()]);
 
       return res.status(200).json({
         user,
@@ -49,7 +49,7 @@ exports.create = [
 
 exports.read = async (req, res, next) => {
   try {
-    const post = await Post.findById(req.params.id)
+    const post = await Post.findById(req.params.postID)
       .populate("author comments")
       .exec();
     return res.status(200).json({
@@ -61,8 +61,8 @@ exports.read = async (req, res, next) => {
 };
 
 exports.update = [
-  body("title").isLength({ min: 1, max: 100 }),
-  body("content").isLength({ min: 1, max: 360 }),
+  body("title").isLength({ min: 1, max: 300 }),
+  body("content").isLength({ max: 720 }),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -73,7 +73,7 @@ exports.update = [
     try {
       const { title, content } = req.body;
       const response = await Post.findByIdAndUpdate(
-        req.params.id,
+        req.params.postID,
         { title, content, dateEdited: Date.now() },
         { new: true }
       );
@@ -92,7 +92,7 @@ exports.update = [
 // May need to change to make more performant.
 exports.delete = async (req, res, next) => {
   try {
-    const comments = await Comment.find({ post: req.params.id })
+    const comments = await Comment.find({ post: req.params.postID })
       .populate("author")
       .exec();
     comments.forEach(async (comment) => {
@@ -102,19 +102,19 @@ exports.delete = async (req, res, next) => {
         {}
       );
     });
-    await Comment.deleteMany({ post: req.params.id });
-    const post = await Post.findById(req.params.id);
+    await Comment.deleteMany({ post: req.params.postID });
+    const post = await Post.findById(req.params.postID);
     await User.findByIdAndUpdate(
       post.author,
-      { $pull: { posts: req.params.id } },
+      { $pull: { posts: req.params.postID } },
       {}
     );
     await Sub.findByIdAndUpdate(
       post.sub,
-      { $pull: { posts: req.params.id } },
+      { $pull: { posts: req.params.postID } },
       {}
     );
-    const response = await Post.findByIdAndDelete(req.params.id);
+    const response = await Post.findByIdAndDelete(req.params.postID);
     return res.status(200).json({
       response,
       message: "Post successfully deleted",

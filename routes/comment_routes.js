@@ -9,7 +9,11 @@ router.post(
   comment_controller.create
 );
 
-router.get("/:commentID", comment_controller.read);
+router.get(
+  "/:commentID",
+  passport.authenticate("jwt", { session: false }),
+  comment_controller.read
+);
 
 router.put(
   "/:commentID/update",

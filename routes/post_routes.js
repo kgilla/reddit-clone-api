@@ -9,16 +9,16 @@ router.post(
   post_controller.create
 );
 
-router.get("/:id", post_controller.read);
+router.get("/:postID", post_controller.read);
 
 router.put(
-  "/:id/update",
+  "/:postID/update",
   passport.authenticate("jwt", { session: false }),
   post_controller.update
 );
 
 router.delete(
-  "/:id/delete",
+  "/:postID/delete",
   passport.authenticate("jwt", { session: false }),
   post_controller.delete
 );

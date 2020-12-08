@@ -13,7 +13,10 @@ module.exports = passport.use(
         return done(err);
       }
       if (!user) {
-        return done(null, false, { message: "Username does not exist" });
+        return done(null, false, {
+          message: "Username does not exist",
+          name: "username",
+        });
       }
       bcrypt.compare(password, user.password, (err, res) => {
         if (res) {
@@ -21,7 +24,10 @@ module.exports = passport.use(
             message: `Welcome back ${user.name}!`,
           });
         } else {
-          return done(null, false, { message: "Incorrect password" });
+          return done(null, false, {
+            message: "Incorrect password",
+            name: "password",
+          });
         }
       });
     });
