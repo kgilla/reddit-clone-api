@@ -17,7 +17,8 @@ exports.create = [
     .trim(),
   body("password")
     .isLength({ min: 8, max: 60 })
-    .withMessage("Passwords must be at least 8 characters long."),
+    .withMessage("Passwords must be at least 8 characters long.")
+    .trim(),
   body("email")
     .notEmpty()
     .withMessage("Email is required")
@@ -75,23 +76,34 @@ exports.update = async (req, res, next) => {};
 
 exports.delete = async (req, res, next) => {};
 
-exports.login = (req, res, next) => {
-  passport.authenticate("local", { session: false }, (err, user, info) => {
-    if (err) {
-      res.status(400).json({
-        message: info.message,
-        err,
-        name: info.name,
-      });
-    } else if (!user) {
-      return res.status(401).json({
-        user,
-        message: info.message,
-        name: info.name,
-      });
-    } else {
-      const token = jwt.sign({ user }, process.env.JWT_SECRET);
-      return res.status(200).json({ user, token });
-    }
-  })(req, res);
+exports.login = [
+  body("username").trim().trim(),
+  body("password").trim(),
+  (req, res, next) => {
+    passport.authenticate("local", { session: false }, (err, user, info) => {
+      if (err) {
+        res.status(400).json({
+          message: info.message,
+          err,
+          name: info.name,
+        });
+      } else if (!user) {
+        return res.status(401).json({
+          user,
+          message: info.message,
+          name: info.name,
+        });
+      } else {
+        const token = jwt.sign({ user }, process.env.JWT_SECRET);
+        return res.status(200).json({ user, token });
+      }
+    })(req, res);
+  },
+];
+
+exports.subscribe = (req, res, next) => {
+  // add sub to user, add user to sub
+  const sub = Sub.findById;
 };
+
+exports.unsubscribe = (req, res, next) => {};

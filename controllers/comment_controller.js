@@ -18,16 +18,29 @@ exports.create = [
         post: req.params.postID,
         parent,
       });
-      const response = await comment.save();
-      const [author, post] = await Promise.all([
-        User.findById(req.user.id),
-        Post.findById(req.params.postID),
-      ]);
-      author.comments.push(comment);
-      post.comments.push(comment);
-      await Promise.all([author.save(), post.save()]);
+      await comment.save();
+      if (parent) {
+        const [author, parentComment, post] = await Promise.all([
+          User.findById(req.user.id),
+          Comment.findById(parent),
+          Post.findById(req.params.postID),
+        ]);
+        author.comments.push(comment);
+        parentComment.replies.push(comment);
+        post.commentCount += 1;
+        await Promise.all([author.save(), parentComment.save(), post.save()]);
+      } else {
+        const [author, post] = await Promise.all([
+          User.findById(req.user.id),
+          Post.findById(req.params.postID),
+        ]);
+        author.comments.push(comment);
+        post.comments.push(comment);
+        post.commentCount += 1;
+        await Promise.all([author.save(), post.save()]);
+      }
       return res.status(201).json({
-        response,
+        comment,
         message: "Comment submitted successfully.",
       });
     } catch (err) {
@@ -45,6 +58,13 @@ exports.read = async (req, res, next) => {
     return res.status(200).json({
       comment,
     });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.index = async (req, res, next) => {
+  try {
   } catch (err) {
     return next(err);
   }

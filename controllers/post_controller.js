@@ -1,6 +1,12 @@
 const { Comment, Post, Sub, User } = require("../models");
 const { body, validationResult } = require("express-validator");
 
+function populateReplies(node) {
+  return Node.populate(node, { path: "replies author" }).then(function (node) {
+    return node.replies ? populateParents(node.replies) : Promise.fulfill(node);
+  });
+}
+
 exports.create = [
   body("title").isLength({ min: 1, max: 300 }),
   body("content").isLength({ max: 720 }),
@@ -50,7 +56,7 @@ exports.create = [
 exports.read = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.postID)
-      .populate("author comments")
+      .populate("author comments sub")
       .exec();
     return res.status(200).json({
       post,
@@ -89,7 +95,7 @@ exports.update = [
   },
 ];
 
-// May need to change to make more performant.
+// May need to change to make more performant. Perhaps adopt a more reddit type approach to only deleting the document and not removing all child nodes...
 exports.delete = async (req, res, next) => {
   try {
     const comments = await Comment.find({ post: req.params.postID })

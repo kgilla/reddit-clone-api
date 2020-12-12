@@ -53,7 +53,7 @@ exports.readAll = async (req, res, next) => {
 exports.read = async (req, res, next) => {
   try {
     const sub = await Sub.findById(req.params.subID)
-      .populate("posts author")
+      .populate({ path: "posts", populate: { path: "author comments" } })
       .exec();
     return res.status(200).json({
       sub,
@@ -63,7 +63,7 @@ exports.read = async (req, res, next) => {
   }
 };
 
-exports.allPosts = async (req, res, next) => {
+exports.index = async (req, res, next) => {
   try {
     const posts = await Post.find().populate("author sub").exec();
     return res.status(200).json({
