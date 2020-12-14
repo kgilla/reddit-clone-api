@@ -39,17 +39,6 @@ exports.create = [
   },
 ];
 
-exports.readAll = async (req, res, next) => {
-  try {
-    const allSubs = await Sub.find();
-    return res.status(200).json({
-      allSubs,
-    });
-  } catch (err) {
-    return next(err);
-  }
-};
-
 exports.read = async (req, res, next) => {
   try {
     const sub = await Sub.findById(req.params.subID)
@@ -65,9 +54,9 @@ exports.read = async (req, res, next) => {
 
 exports.index = async (req, res, next) => {
   try {
-    const posts = await Post.find().populate("author sub").exec();
+    const subs = await Sub.find();
     return res.status(200).json({
-      posts,
+      subs,
     });
   } catch (err) {
     return next(err);
@@ -78,3 +67,57 @@ exports.update = async (req, res, next) => {
   // able to update sub description
 };
 exports.delete = async (req, res, next) => {};
+
+exports.allPosts = async (req, res, next) => {
+  try {
+    const allSubs = await Sub.find();
+    return res.status(200).json({
+      allSubs,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.subscribe = async (req, res, next) => {
+  try {
+    console.log("here");
+    const [sub, user] = await Promise.all([
+      Sub.findById(req.params.subID),
+      User.findById(req.user._id),
+    ]);
+    sub.subscribers.push(user._id);
+    user.subscriptions.push(sub._id);
+    const response = await Promise.all([sub.save(), user.save()]);
+    res.status(200).json({
+      message: `Successfully subscribed to ${sub.name}`,
+      response,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.unsubscribe = async (req, res, next) => {
+  try {
+    const response = await Promise.all([
+      Sub.findByIdAndUpdate(
+        req.params.subID,
+        { $pull: { subscribers: req.user._id } },
+        {}
+      ),
+      User.findByIdAndUpdate(
+        req.user._id,
+        { $pull: { subscriptions: req.params.subID } },
+        {}
+      ),
+    ]);
+
+    res.status(200).json({
+      message: `Successfully unsubscribed from ${sub.name}`,
+      response,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};

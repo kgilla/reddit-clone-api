@@ -2,7 +2,7 @@ const { Comment, Post, User } = require("../models");
 const { body, validationResult } = require("express-validator");
 
 exports.create = [
-  body("content").isLength({ min: 1, max: 360 }),
+  body("content").isLength({ min: 1, max: 720 }),
   async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -100,7 +100,7 @@ exports.delete = async (req, res, next) => {
   try {
     const comment = await Comment.findByIdAndDelete(req.params.commentID);
 
-    const [response, responseTwo] = await Promise.all([
+    const response = await Promise.all([
       User.findByIdAndUpdate(
         comment.author,
         { $pull: { comments: req.params.commentID } },
@@ -114,9 +114,8 @@ exports.delete = async (req, res, next) => {
     ]);
 
     return res.status(200).json({
-      response,
-      responseTwo,
       message: "Comment deleted successfully",
+      response,
     });
   } catch (err) {
     return next(err);
