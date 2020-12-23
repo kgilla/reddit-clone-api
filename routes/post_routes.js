@@ -9,12 +9,26 @@ router.post(
   post_controller.create
 );
 
+router.get(
+  "/home",
+  passport.authenticate("jwt", { session: false }),
+  post_controller.homepage
+);
+
+router.get("/", post_controller.index);
+
 router.get("/:postID", post_controller.read);
 
 router.put(
   "/:postID/update",
   passport.authenticate("jwt", { session: false }),
   post_controller.update
+);
+
+router.put(
+  "/:postID/vote",
+  passport.authenticate("jwt", { session: false }),
+  post_controller.vote
 );
 
 router.delete(

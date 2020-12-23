@@ -1,4 +1,4 @@
-const { Comment, Post, User } = require("../models");
+const { Comment, Post, User, Vote } = require("../models");
 const { body, validationResult } = require("express-validator");
 
 exports.create = [
@@ -63,13 +63,6 @@ exports.read = async (req, res, next) => {
   }
 };
 
-exports.index = async (req, res, next) => {
-  try {
-  } catch (err) {
-    return next(err);
-  }
-};
-
 exports.update = [
   body("content").isLength({ min: 1, max: 360 }),
   async (req, res, next) => {
@@ -81,15 +74,13 @@ exports.update = [
     }
     try {
       const { content } = req.body;
-      const response = await Comment.findByIdAndUpdate(
-        req.params.commentID,
-        { content: content, dateEdited: Date.now() },
-        { new: true }
-      );
-      return res.status(201).json({
-        response,
-        message: "Comment edited successfully.",
-      });
+      const comment = await Comment.findById(req.params.commentID);
+      if (comment.author.equals(req.user._id)) {
+        await comment.updateOne({ content, dateEdited: Date.now() }, {});
+        return res.status(204).send();
+      } else {
+        return res.status(401).send();
+      }
     } catch (err) {
       return next(err);
     }
@@ -98,7 +89,7 @@ exports.update = [
 
 exports.delete = async (req, res, next) => {
   try {
-    const comment = await Comment.findByIdAndDelete(req.params.commentID);
+    const comment = await Comment.findByIdAndUpdate(req.params.commentID);
 
     const response = await Promise.all([
       User.findByIdAndUpdate(
@@ -117,6 +108,39 @@ exports.delete = async (req, res, next) => {
       message: "Comment deleted successfully",
       response,
     });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.vote = async (req, res, next) => {
+  try {
+    const { value } = req.body;
+    const query = { user: req.user, comment: req.params.commentID };
+    const [oldVote, comment] = await Promise.all([
+      Vote.findOne(query),
+      Comment.findById(req.params.commentID),
+    ]);
+    if (oldVote && oldVote.value === value) {
+      return res.status(400).json({ error: "vote already cast" });
+    } else {
+      const vote = await Vote.findOneAndUpdate(
+        query,
+        { value },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      if (!oldVote) {
+        value === true ? (comment.score += 1) : (comment.score -= 1);
+      } else if (vote.value === null) {
+        oldVote.value === true ? (comment.score -= 1) : (comment.score += 1);
+      } else if (oldVote.value === null) {
+        vote.value === true ? (comment.score += 1) : (comment.score -= 1);
+      } else {
+        vote.value === true ? (comment.score += 2) : (comment.score -= 2);
+      }
+      await comment.save();
+      return res.status(204);
+    }
   } catch (err) {
     return next(err);
   }

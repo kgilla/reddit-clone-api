@@ -5,6 +5,8 @@ exports.create = [
   body("name")
     .notEmpty()
     .withMessage("Community name is required")
+    .isLength({ min: 3, max: 21 })
+    .withMessage("Community name must be between 3-21 characters")
     .custom(async (value) => {
       const sub = await Sub.findOne({ name: value });
       return sub
@@ -23,14 +25,16 @@ exports.create = [
       });
     }
     try {
-      const { name, description } = req.body;
+      const { name, description, color } = req.body;
       const sub = new Sub({
         name,
         description,
+        color,
+        creator: req.user._id,
       });
-      const response = await sub.save();
+      await sub.save();
       return res.status(201).json({
-        response,
+        sub,
         message: "Sub created!",
       });
     } catch (err) {
@@ -42,7 +46,7 @@ exports.create = [
 exports.read = async (req, res, next) => {
   try {
     const sub = await Sub.findById(req.params.subID)
-      .populate({ path: "posts", populate: { path: "author comments" } })
+      .populate({ path: "posts", populate: { path: "author comments sub" } })
       .exec();
     return res.status(200).json({
       sub,
@@ -54,7 +58,7 @@ exports.read = async (req, res, next) => {
 
 exports.index = async (req, res, next) => {
   try {
-    const subs = await Sub.find();
+    const subs = await Sub.find().sort("name");
     return res.status(200).json({
       subs,
     });
@@ -64,15 +68,27 @@ exports.index = async (req, res, next) => {
 };
 
 exports.update = async (req, res, next) => {
-  // able to update sub description
+  const { description, color, picture } = req.body;
+  try {
+    const sub = await Sub.findById(req.params.subID);
+    if (sub.creator.equals(req.user._id)) {
+      await sub.updateOne({ description, color, picture }, {});
+      return res.status(204).send();
+    } else {
+      return res.status(401).send();
+    }
+  } catch (err) {
+    return next(err);
+  }
 };
 exports.delete = async (req, res, next) => {};
 
-exports.allPosts = async (req, res, next) => {
+exports.userSubs = async (req, res, next) => {
   try {
-    const allSubs = await Sub.find();
+    const user = await User.findById(req.user._id);
+    const subs = await Sub.find().where("_id").in(user.subscriptions);
     return res.status(200).json({
-      allSubs,
+      subs,
     });
   } catch (err) {
     return next(err);
@@ -81,17 +97,17 @@ exports.allPosts = async (req, res, next) => {
 
 exports.subscribe = async (req, res, next) => {
   try {
-    console.log("here");
     const [sub, user] = await Promise.all([
       Sub.findById(req.params.subID),
       User.findById(req.user._id),
     ]);
     sub.subscribers.push(user._id);
     user.subscriptions.push(sub._id);
-    const response = await Promise.all([sub.save(), user.save()]);
+    await Promise.all([sub.save(), user.save()]);
     res.status(200).json({
       message: `Successfully subscribed to ${sub.name}`,
-      response,
+      sub,
+      user,
     });
   } catch (err) {
     return next(err);
@@ -100,22 +116,22 @@ exports.subscribe = async (req, res, next) => {
 
 exports.unsubscribe = async (req, res, next) => {
   try {
-    const response = await Promise.all([
+    const [sub, user] = await Promise.all([
       Sub.findByIdAndUpdate(
         req.params.subID,
         { $pull: { subscribers: req.user._id } },
-        {}
+        { new: true }
       ),
       User.findByIdAndUpdate(
         req.user._id,
         { $pull: { subscriptions: req.params.subID } },
-        {}
+        { new: true }
       ),
     ]);
-
     res.status(200).json({
-      message: `Successfully unsubscribed from ${sub.name}`,
-      response,
+      message: "Successfully unsubscribed",
+      sub,
+      user,
     });
   } catch (err) {
     return next(err);

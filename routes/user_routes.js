@@ -7,11 +7,7 @@ const passport = require("passport");
 
 router.post("/create", user_controller.create);
 
-router.get(
-  "/:username",
-  passport.authenticate("jwt", { session: false }),
-  user_controller.read
-);
+router.get("/:username", user_controller.read);
 
 router.put(
   "/:username/update",

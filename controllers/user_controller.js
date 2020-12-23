@@ -61,9 +61,11 @@ exports.create = [
 
 exports.read = async (req, res, next) => {
   try {
-    const user = await User.findOne({ username: req.params.username })
-      .populate("posts comments")
-      .exec();
+    const user = await User.findOne({
+      username: req.params.username,
+    })
+      .populate({ path: "comments", populate: { path: "author post" } })
+      .populate({ path: "posts", populate: { path: "author sub" } });
     res.status(200).json({
       user,
     });
@@ -100,10 +102,3 @@ exports.login = [
     })(req, res);
   },
 ];
-
-exports.subscribe = (req, res, next) => {
-  // add sub to user, add user to sub
-  const sub = Sub.findById;
-};
-
-exports.unsubscribe = (req, res, next) => {};

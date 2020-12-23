@@ -9,19 +9,12 @@ router.post(
   sub_controller.create
 );
 
-router.post(
-  "/:subID/subscribe",
+router.get(
+  "/user",
   passport.authenticate("jwt", { session: false }),
-  sub_controller.subscribe
+  sub_controller.userSubs
 );
 
-router.put(
-  "/:subID/unsubscribe",
-  passport.authenticate("jwt", { session: false }),
-  sub_controller.unsubscribe
-);
-
-router.get("/all", sub_controller.allPosts);
 router.get("/", sub_controller.index);
 router.get("/:subID", sub_controller.read);
 
@@ -35,6 +28,18 @@ router.delete(
   "/:subID/delete",
   passport.authenticate("jwt", { session: false }),
   sub_controller.delete
+);
+
+router.put(
+  "/:subID/subscribe",
+  passport.authenticate("jwt", { session: false }),
+  sub_controller.subscribe
+);
+
+router.put(
+  "/:subID/unsubscribe",
+  passport.authenticate("jwt", { session: false }),
+  sub_controller.unsubscribe
 );
 
 module.exports = router;

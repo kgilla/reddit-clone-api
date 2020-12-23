@@ -21,6 +21,12 @@ router.put(
   comment_controller.update
 );
 
+router.put(
+  "/:commentID/vote",
+  passport.authenticate("jwt", { session: false }),
+  comment_controller.vote
+);
+
 router.delete(
   "/:commentID/delete",
   passport.authenticate("jwt", { session: false }),

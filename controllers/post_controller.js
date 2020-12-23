@@ -1,11 +1,5 @@
-const { Comment, Post, Sub, User } = require("../models");
+const { Comment, Post, Sub, User, Vote } = require("../models");
 const { body, validationResult } = require("express-validator");
-
-function populateReplies(node) {
-  return Node.populate(node, { path: "replies author" }).then(function (node) {
-    return node.replies ? populateParents(node.replies) : Promise.fulfill(node);
-  });
-}
 
 exports.create = [
   body("title").isLength({ min: 1, max: 300 }),
@@ -66,6 +60,17 @@ exports.read = async (req, res, next) => {
   }
 };
 
+exports.index = async (req, res, next) => {
+  try {
+    const posts = await Post.find().populate("author comments sub").exec();
+    return res.status(200).json({
+      posts,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 exports.update = [
   body("title").isLength({ min: 1, max: 300 }),
   body("content").isLength({ max: 720 }),
@@ -78,15 +83,13 @@ exports.update = [
     }
     try {
       const { title, content } = req.body;
-      const response = await Post.findByIdAndUpdate(
-        req.params.postID,
-        { title, content, dateEdited: Date.now() },
-        { new: true }
-      );
-      return res.status(200).json({
-        response,
-        message: "Post updated successfully",
-      });
+      const post = await Post.findById(req.params.postID);
+      if (post.author.equals(req.user._id)) {
+        await post.updateOne({ title, content, dateEdited: Date.now() }, {});
+        return res.status(204).send();
+      } else {
+        return res.status(401).send();
+      }
     } catch (err) {
       return res.status(400).json({
         error: err,
@@ -125,6 +128,51 @@ exports.delete = async (req, res, next) => {
       response,
       message: "Post successfully deleted",
     });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.homepage = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const posts = await Post.find().where("sub").in(user.subscriptions).exec();
+    return res.status(200).json({
+      posts,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.vote = async (req, res, next) => {
+  try {
+    const { value } = req.body;
+    const query = { user: req.user, post: req.params.postID };
+    const [oldVote, post] = await Promise.all([
+      Vote.findOne(query),
+      Post.findById(req.params.postID),
+    ]);
+    if (oldVote && oldVote.value === value) {
+      return res.status(400).json({ error: "vote already cast" });
+    } else {
+      const vote = await Vote.findOneAndUpdate(
+        query,
+        { value },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      if (!oldVote) {
+        value === true ? (post.score += 1) : (post.score -= 1);
+      } else if (vote.value === null) {
+        oldVote.value === true ? (post.score -= 1) : (post.score += 1);
+      } else if (oldVote.value === null) {
+        vote.value === true ? (post.score += 1) : (post.score -= 1);
+      } else {
+        vote.value === true ? (post.score += 2) : (post.score -= 2);
+      }
+      await post.save();
+      return res.status(204);
+    }
   } catch (err) {
     return next(err);
   }
