@@ -8,8 +8,7 @@ const subSchema = new Schema({
   color: { type: String },
   picture: { type: String },
   dateCreated: { type: Date, default: Date.now() },
-  subscribers: [{ type: Schema.Types.ObjectId, ref: "User" }],
-  posts: [{ type: Schema.Types.ObjectId, ref: "Post" }],
+  subscribers: { type: Number, default: 0 },
 });
 
 module.exports = mongoose.model("Sub", subSchema);

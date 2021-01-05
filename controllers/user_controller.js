@@ -64,7 +64,10 @@ exports.read = async (req, res, next) => {
     const user = await User.findOne({
       username: req.params.username,
     })
-      .populate({ path: "comments", populate: { path: "author post" } })
+      .populate({
+        path: "comments",
+        populate: { path: "post", populate: { path: "author" } },
+      })
       .populate({ path: "posts", populate: { path: "author sub" } });
     res.status(200).json({
       user,

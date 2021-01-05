@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const commentSchema = new Schema({
   content: { type: String },
-  score: { type: Number, default: 1 },
+  score: { type: Number, default: 0 },
   dateCreated: { type: Date, default: Date.now() },
   dateEdited: { type: Date },
   author: { type: Schema.Types.ObjectId, ref: "User" },

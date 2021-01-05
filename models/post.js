@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const postSchema = new Schema({
   title: { type: String },
   content: { type: String },
-  score: { type: Number, default: 1 },
+  score: { type: Number, default: 0 },
   dateCreated: { type: Date, default: Date.now() },
   dateEdited: { type: Date },
   commentCount: { type: Number, default: 0 },

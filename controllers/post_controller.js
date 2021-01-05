@@ -13,30 +13,20 @@ exports.create = [
     }
     try {
       const { sub, title, content } = req.body;
-
-      const [user, subDoc] = await Promise.all([
-        User.findById(req.user._id).exec(),
-        Sub.findById(sub).exec(),
-      ]);
-
       const post = new Post({
         title,
         content,
         author: req.user._id,
         sub,
       });
-
-      const savedPost = await post.save();
-
-      user.posts.push(post._id);
-      subDoc.posts.push(post._id);
-
-      await Promise.all([user.save(), subDoc.save()]);
-
-      return res.status(200).json({
-        user,
-        sub,
-        savedPost,
+      await post.save();
+      await User.findByIdAndUpdate(
+        req.user.id,
+        { $push: { posts: post._id } },
+        {}
+      );
+      return res.status(201).json({
+        post,
         message: "Post created successfully",
       });
     } catch (err) {
@@ -98,36 +88,20 @@ exports.update = [
   },
 ];
 
-// May need to change to make more performant. Perhaps adopt a more reddit type approach to only deleting the document and not removing all child nodes...
 exports.delete = async (req, res, next) => {
   try {
-    const comments = await Comment.find({ post: req.params.postID })
-      .populate("author")
-      .exec();
-    comments.forEach(async (comment) => {
+    const post = await Post.findById(req.params.postID);
+    if (post.author.equals(req.user.id)) {
       await User.findByIdAndUpdate(
-        comment.author,
-        { $pull: { comments: comment._id } },
+        post.author,
+        { $pull: { posts: req.params.postID } },
         {}
       );
-    });
-    await Comment.deleteMany({ post: req.params.postID });
-    const post = await Post.findById(req.params.postID);
-    await User.findByIdAndUpdate(
-      post.author,
-      { $pull: { posts: req.params.postID } },
-      {}
-    );
-    await Sub.findByIdAndUpdate(
-      post.sub,
-      { $pull: { posts: req.params.postID } },
-      {}
-    );
-    const response = await Post.findByIdAndDelete(req.params.postID);
-    return res.status(200).json({
-      response,
-      message: "Post successfully deleted",
-    });
+      await Post.findByIdAndRemove(post._id);
+      return res.status(204).send();
+    } else {
+      return res.status(401);
+    }
   } catch (err) {
     return next(err);
   }

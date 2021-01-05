@@ -20,24 +20,36 @@ exports.create = [
       });
       await comment.save();
       if (parent) {
-        const [author, parentComment, post] = await Promise.all([
-          User.findById(req.user.id),
-          Comment.findById(parent),
-          Post.findById(req.params.postID),
+        await Promise.all([
+          User.findByIdAndUpdate(
+            req.user.id,
+            { $push: { comments: comment } },
+            {}
+          ),
+          Comment.findByIdAndUpdate(
+            parent,
+            { $push: { replies: comment } },
+            {}
+          ),
+          Post.findByIdAndUpdate(
+            req.params.postID,
+            { $inc: { commentCount: 1 } },
+            {}
+          ),
         ]);
-        author.comments.push(comment);
-        parentComment.replies.push(comment);
-        post.commentCount += 1;
-        await Promise.all([author.save(), parentComment.save(), post.save()]);
       } else {
-        const [author, post] = await Promise.all([
-          User.findById(req.user.id),
-          Post.findById(req.params.postID),
+        await Promise.all([
+          User.findByIdAndUpdate(
+            req.user.id,
+            { $push: { comments: comment } },
+            {}
+          ),
+          Post.findByIdAndUpdate(
+            req.params.postID,
+            { $inc: { commentCount: 1 }, $push: { comments: comment } },
+            {}
+          ),
         ]);
-        author.comments.push(comment);
-        post.comments.push(comment);
-        post.commentCount += 1;
-        await Promise.all([author.save(), post.save()]);
       }
       return res.status(201).json({
         comment,
@@ -75,7 +87,7 @@ exports.update = [
     try {
       const { content } = req.body;
       const comment = await Comment.findById(req.params.commentID);
-      if (comment.author.equals(req.user._id)) {
+      if (comment.author.equals(req.user.id)) {
         await comment.updateOne({ content, dateEdited: Date.now() }, {});
         return res.status(204).send();
       } else {
@@ -89,25 +101,20 @@ exports.update = [
 
 exports.delete = async (req, res, next) => {
   try {
-    const comment = await Comment.findByIdAndUpdate(req.params.commentID);
-
-    const response = await Promise.all([
-      User.findByIdAndUpdate(
-        comment.author,
-        { $pull: { comments: req.params.commentID } },
-        {}
-      ),
-      Post.findByIdAndUpdate(
-        comment.post,
-        { $pull: { comments: req.params.commentID } },
-        {}
-      ),
-    ]);
-
-    return res.status(200).json({
-      message: "Comment deleted successfully",
-      response,
-    });
+    const comment = await Comment.findById(req.params.commentID);
+    if (comment.author.equals(req.user.id)) {
+      await Promise.all([
+        comment.updateOne({ author: "Deleted", content: "Deleted" }, {}),
+        User.findByIdAndUpdate(
+          comment.author,
+          { $pull: { comments: req.params.commentID } },
+          {}
+        ),
+      ]);
+      return res.status(204);
+    } else {
+      return res.status(401).send();
+    }
   } catch (err) {
     return next(err);
   }
@@ -116,7 +123,7 @@ exports.delete = async (req, res, next) => {
 exports.vote = async (req, res, next) => {
   try {
     const { value } = req.body;
-    const query = { user: req.user, comment: req.params.commentID };
+    const query = { user: req.user.id, comment: req.params.commentID };
     const [oldVote, comment] = await Promise.all([
       Vote.findOne(query),
       Comment.findById(req.params.commentID),

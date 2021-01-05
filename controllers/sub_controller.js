@@ -45,11 +45,11 @@ exports.create = [
 
 exports.read = async (req, res, next) => {
   try {
-    const sub = await Sub.findById(req.params.subID)
-      .populate({ path: "posts", populate: { path: "author comments sub" } })
-      .exec();
+    const sub = await Sub.findById(req.params.subID);
+    const posts = await Post.find({ sub: sub._id }).populate("author sub");
     return res.status(200).json({
       sub,
+      posts,
     });
   } catch (err) {
     return next(err);
@@ -81,6 +81,8 @@ exports.update = async (req, res, next) => {
     return next(err);
   }
 };
+
+// unsure if i want to implement this or not.
 exports.delete = async (req, res, next) => {};
 
 exports.userSubs = async (req, res, next) => {
@@ -97,18 +99,16 @@ exports.userSubs = async (req, res, next) => {
 
 exports.subscribe = async (req, res, next) => {
   try {
-    const [sub, user] = await Promise.all([
-      Sub.findById(req.params.subID),
-      User.findById(req.user._id),
+    const sub = await Sub.findById(req.params.subID);
+    await Promise.all([
+      sub.updateOne({ $inc: { subscribers: 1 } }, {}),
+      await User.findByIdAndUpdate(
+        req.user._id,
+        { $push: { subscriptions: sub._id } },
+        {}
+      ),
     ]);
-    sub.subscribers.push(user._id);
-    user.subscriptions.push(sub._id);
-    await Promise.all([sub.save(), user.save()]);
-    res.status(200).json({
-      message: `Successfully subscribed to ${sub.name}`,
-      sub,
-      user,
-    });
+    res.status(204).send();
   } catch (err) {
     return next(err);
   }
@@ -116,23 +116,19 @@ exports.subscribe = async (req, res, next) => {
 
 exports.unsubscribe = async (req, res, next) => {
   try {
-    const [sub, user] = await Promise.all([
-      Sub.findByIdAndUpdate(
+    await Promise.all([
+      Sub.findById(
         req.params.subID,
-        { $pull: { subscribers: req.user._id } },
-        { new: true }
+        { $dec: { $inc: { subscribers: -1 } } },
+        {}
       ),
       User.findByIdAndUpdate(
         req.user._id,
         { $pull: { subscriptions: req.params.subID } },
-        { new: true }
+        {}
       ),
     ]);
-    res.status(200).json({
-      message: "Successfully unsubscribed",
-      sub,
-      user,
-    });
+    res.status(204).send();
   } catch (err) {
     return next(err);
   }
