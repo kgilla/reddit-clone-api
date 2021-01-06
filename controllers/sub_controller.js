@@ -99,16 +99,24 @@ exports.userSubs = async (req, res, next) => {
 
 exports.subscribe = async (req, res, next) => {
   try {
-    const sub = await Sub.findById(req.params.subID);
-    await Promise.all([
-      sub.updateOne({ $inc: { subscribers: 1 } }, {}),
-      await User.findByIdAndUpdate(
-        req.user._id,
-        { $push: { subscriptions: sub._id } },
-        {}
-      ),
-    ]);
-    res.status(204).send();
+    const user = await User.findById(req.user._id);
+    if (!user.subscriptions.some((s) => s === req.params.subID)) {
+      await Promise.all([
+        Sub.findByIdAndUpdate(
+          req.params.subID,
+          { $inc: { subscribers: 1 } },
+          {}
+        ),
+        await User.findByIdAndUpdate(
+          req.user._id,
+          { $push: { subscriptions: req.params.subID } },
+          {}
+        ),
+      ]);
+      res.status(204).send();
+    } else {
+      return res.status(400).send();
+    }
   } catch (err) {
     return next(err);
   }
@@ -116,19 +124,25 @@ exports.subscribe = async (req, res, next) => {
 
 exports.unsubscribe = async (req, res, next) => {
   try {
-    await Promise.all([
-      Sub.findById(
-        req.params.subID,
-        { $dec: { $inc: { subscribers: -1 } } },
-        {}
-      ),
-      User.findByIdAndUpdate(
-        req.user._id,
-        { $pull: { subscriptions: req.params.subID } },
-        {}
-      ),
-    ]);
-    res.status(204).send();
+    const user = await User.findById(req.user.id);
+    if (user.subscriptions.some((s) => s == req.params.subID)) {
+      await Promise.all([
+        Sub.findByIdAndUpdate(
+          req.params.subID,
+          { $inc: { subscribers: -1 } },
+          {}
+        ),
+        User.findByIdAndUpdate(
+          req.user._id,
+          { $pull: { subscriptions: req.params.subID } },
+          {}
+        ),
+      ]);
+      return res.status(204).send();
+    } else {
+      console.log(user.subscriptions.some((s) => s === req.params.subID));
+      return res.status(400).send();
+    }
   } catch (err) {
     return next(err);
   }

@@ -92,15 +92,17 @@ exports.delete = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.postID);
     if (post.author.equals(req.user.id)) {
-      await User.findByIdAndUpdate(
-        post.author,
-        { $pull: { posts: req.params.postID } },
-        {}
-      );
-      await Post.findByIdAndRemove(post._id);
+      await Promise.all([
+        User.findByIdAndUpdate(
+          post.author,
+          { $pull: { posts: req.params.postID } },
+          {}
+        ),
+        await Post.findByIdAndDelete(post._id),
+      ]);
       return res.status(204).send();
     } else {
-      return res.status(401);
+      return res.status(401).send();
     }
   } catch (err) {
     return next(err);

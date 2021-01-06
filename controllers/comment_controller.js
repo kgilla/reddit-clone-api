@@ -103,15 +103,25 @@ exports.delete = async (req, res, next) => {
   try {
     const comment = await Comment.findById(req.params.commentID);
     if (comment.author.equals(req.user.id)) {
+      if (comment.replies.length == 0) {
+        await Comment.findByIdAndDelete(req.params.commentID);
+      } else {
+        await comment.updateOne({ author: null, content: null }, {});
+      }
       await Promise.all([
-        comment.updateOne({ author: "Deleted", content: "Deleted" }, {}),
         User.findByIdAndUpdate(
           comment.author,
           { $pull: { comments: req.params.commentID } },
           {}
         ),
+        Post.findByIdAndUpdate(
+          req.params.postID,
+          { $inc: { commentCount: -1 } },
+          {}
+        ),
       ]);
-      return res.status(204);
+
+      return res.status(204).send();
     } else {
       return res.status(401).send();
     }
