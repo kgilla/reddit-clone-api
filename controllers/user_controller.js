@@ -66,9 +66,18 @@ exports.read = async (req, res, next) => {
     })
       .populate({
         path: "comments",
-        populate: { path: "post", populate: { path: "author" } },
+        options: { sort: { dateCreated: -1 } },
+        populate: {
+          path: "post",
+          populate: { path: "author" },
+        },
       })
-      .populate({ path: "posts", populate: { path: "author sub" } });
+      .populate({
+        path: "posts",
+        options: { sort: { dateCreated: -1 } },
+        populate: { path: "author sub" },
+      })
+      .sort({ dateCreated: 1 });
     res.status(200).json({
       user,
     });

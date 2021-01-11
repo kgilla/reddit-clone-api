@@ -30,9 +30,15 @@ exports.create = [
         name,
         description,
         color,
+        subscribers: 1,
         creator: req.user._id,
       });
       await sub.save();
+      await User.findByIdAndUpdate(
+        req.user._id,
+        { $push: { subscriptions: sub._id } },
+        {}
+      );
       return res.status(201).json({
         sub,
         message: "Sub created!",
@@ -46,7 +52,9 @@ exports.create = [
 exports.read = async (req, res, next) => {
   try {
     const sub = await Sub.findById(req.params.subID);
-    const posts = await Post.find({ sub: sub._id }).populate("author sub");
+    const posts = await Post.find({ sub: sub._id })
+      .populate("author sub")
+      .sort({ _id: -1 });
     return res.status(200).json({
       sub,
       posts,
@@ -88,7 +96,10 @@ exports.delete = async (req, res, next) => {};
 exports.userSubs = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
-    const subs = await Sub.find().where("_id").in(user.subscriptions);
+    const subs = await Sub.find()
+      .where("_id")
+      .in(user.subscriptions)
+      .sort({ name: 1 });
     return res.status(200).json({
       subs,
     });
@@ -140,7 +151,6 @@ exports.unsubscribe = async (req, res, next) => {
       ]);
       return res.status(204).send();
     } else {
-      console.log(user.subscriptions.some((s) => s === req.params.subID));
       return res.status(400).send();
     }
   } catch (err) {

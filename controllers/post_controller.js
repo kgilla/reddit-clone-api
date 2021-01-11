@@ -12,10 +12,11 @@ exports.create = [
       });
     }
     try {
-      const { sub, title, content } = req.body;
+      const { sub, title, content, type } = req.body;
       const post = new Post({
         title,
         content,
+        type,
         author: req.user._id,
         sub,
       });
@@ -52,7 +53,9 @@ exports.read = async (req, res, next) => {
 
 exports.index = async (req, res, next) => {
   try {
-    const posts = await Post.find().populate("author comments sub").exec();
+    const posts = await Post.find()
+      .populate("author comments sub")
+      .sort({ _id: -1 });
     return res.status(200).json({
       posts,
     });
@@ -112,7 +115,11 @@ exports.delete = async (req, res, next) => {
 exports.homepage = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
-    const posts = await Post.find().where("sub").in(user.subscriptions).exec();
+    const posts = await Post.find()
+      .where("sub")
+      .in(user.subscriptions)
+      .populate("author sub")
+      .sort({ _id: -1 });
     return res.status(200).json({
       posts,
     });
