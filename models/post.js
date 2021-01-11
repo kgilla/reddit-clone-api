@@ -6,7 +6,7 @@ const postSchema = new Schema({
   title: { type: String },
   content: { type: String },
   score: { type: Number, default: 0 },
-  dateCreated: { type: Date, default: Date.now() },
+  dateCreated: { type: Date, default: new Date() },
   dateEdited: { type: Date },
   commentCount: { type: Number, default: 0 },
   author: { type: Schema.Types.ObjectId, ref: "User" },

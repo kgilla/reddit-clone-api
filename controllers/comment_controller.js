@@ -88,7 +88,7 @@ exports.update = [
       const { content } = req.body;
       const comment = await Comment.findById(req.params.commentID);
       if (comment.author.equals(req.user.id)) {
-        await comment.updateOne({ content, dateEdited: Date.now() }, {});
+        await comment.updateOne({ content, dateEdited: new Date() }, {});
         return res.status(204).send();
       } else {
         return res.status(401).send();

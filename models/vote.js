@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const voteSchema = new Schema({
   value: { type: Boolean },
-  dateCreated: { type: Date, default: Date.now() },
+  dateCreated: { type: Date, default: new Date() },
   user: { type: Schema.Types.ObjectId, ref: "User" },
   post: { type: Schema.Types.ObjectId, ref: "Post" },
   comment: { type: Schema.Types.ObjectId, ref: "Comment" },
