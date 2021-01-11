@@ -7,7 +7,7 @@ const subSchema = new Schema({
   creator: { type: Schema.Types.ObjectId, ref: "User" },
   color: { type: String },
   picture: { type: String },
-  dateCreated: { type: Date, default: Date.now() },
+  dateCreated: { type: Date, default: new Date() },
   subscribers: { type: Number, default: 0 },
 });
 

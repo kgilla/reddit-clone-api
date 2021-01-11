@@ -78,7 +78,7 @@ exports.update = [
       const { title, content } = req.body;
       const post = await Post.findById(req.params.postID);
       if (post.author.equals(req.user._id)) {
-        await post.updateOne({ title, content, dateEdited: Date.now() }, {});
+        await post.updateOne({ title, content, dateEdited: new Date() }, {});
         return res.status(204).send();
       } else {
         return res.status(401).send();
