@@ -41,7 +41,11 @@ exports.create = [
 exports.read = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.postID)
-      .populate("author comments sub")
+      .populate("author sub")
+      .populate({
+        path: "comments",
+        options: { sort: { score: -1 } },
+      })
       .exec();
     return res.status(200).json({
       post,

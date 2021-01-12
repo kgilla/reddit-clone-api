@@ -13,7 +13,10 @@ const commentSchema = new Schema({
 });
 
 function autoPopulateReplies(next) {
-  this.populate("replies author");
+  this.populate("author").populate({
+    path: "replies",
+    options: { sort: { score: -1 } },
+  });
   next();
 }
 
