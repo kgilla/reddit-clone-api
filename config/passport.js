@@ -5,21 +5,18 @@ const ExtractJwt = require("passport-jwt").ExtractJwt;
 const LocalStrategy = require("passport-local").Strategy;
 const { User } = require("../models");
 
-// Local Strategy
 module.exports = passport.use(
-  new LocalStrategy((username, password, done) => {
-    User.findOne({ username }, (err, user) => {
-      if (err) {
-        return done(err);
-      }
+  new LocalStrategy(async (username, password, done) => {
+    try {
+      const user = await User.findOne({ username });
       if (!user) {
         return done(null, false, {
           message: "Username does not exist",
           name: "username",
         });
-      }
-      bcrypt.compare(password, user.password, (err, res) => {
-        if (res) {
+      } else {
+        const match = await bcrypt.compare(password, user.password);
+        if (match) {
           return done(null, user, {
             message: `Welcome back ${user.name}!`,
           });
@@ -29,30 +26,26 @@ module.exports = passport.use(
             name: "password",
           });
         }
-      });
-    });
+      }
+    } catch (err) {
+      return done(err, false);
+    }
   })
 );
 
-// JWT Strategy
 module.exports = passport.use(
   new JwtStrategy(
     {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: process.env.JWT_SECRET,
     },
-    (payload, done) => {
-      User.findById(payload.user._id, (err, user) => {
-        if (err) {
-          return done(err, false);
-        }
-
-        if (user) {
-          done(null, user);
-        } else {
-          done(null, false);
-        }
-      });
+    async (payload, done) => {
+      try {
+        const user = await User.findById(payload.user._id);
+        user ? done(null, user) : done(null, false);
+      } catch (err) {
+        return done(err, false);
+      }
     }
   )
 );

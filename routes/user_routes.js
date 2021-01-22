@@ -10,9 +10,15 @@ router.post("/create", user_controller.create);
 router.get("/:username", user_controller.read);
 
 router.put(
-  "/:username/update",
+  "/:username/update_password",
   passport.authenticate("jwt", { session: false }),
-  user_controller.update
+  user_controller.updatePassword
+);
+
+router.put(
+  "/:username/update_email",
+  passport.authenticate("jwt", { session: false }),
+  user_controller.updateEmail
 );
 
 router.delete(

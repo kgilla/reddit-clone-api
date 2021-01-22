@@ -86,7 +86,83 @@ exports.read = async (req, res, next) => {
   }
 };
 
-exports.update = async (req, res, next) => {};
+exports.updatePassword = [
+  body("oldPassword").isLength({ min: 8, max: 60 }).trim(),
+  body("password")
+    .isLength({ min: 8, max: 60 })
+    .withMessage("Passwords must be at least 8 characters long.")
+    .trim(),
+  body("password2")
+    .isLength({ min: 8, max: 60 })
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error("Password confirmation does not match password");
+      }
+      return true;
+    })
+    .trim(),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        errors: errors.array(),
+      });
+    }
+
+    try {
+      const { oldPassword, password } = req.body;
+      const user = await User.findById(req.user._id);
+      const match = await bcrypt.compare(oldPassword, user.password);
+      if (match) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const response = await User.findByIdAndUpdate(req.user._id, {
+          password: hashedPassword,
+        });
+        if (response) return res.status(204).send();
+      } else {
+        return res.status(401).json({
+          message: "Password incorrect",
+        });
+      }
+    } catch (err) {
+      return next(err);
+    }
+  },
+];
+
+exports.updateEmail = [
+  body("email")
+    .notEmpty()
+    .isEmail()
+    .custom(async (value) => {
+      const user = await User.findOne({ email: value });
+      return user
+        ? Promise.reject("Email already in use.")
+        : Promise.resolve(true);
+    })
+    .trim()
+    .normalizeEmail(),
+
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        errors: errors.array(),
+      });
+    }
+    try {
+      const { email } = req.body;
+      const response = await User.findByIdAndUpdate(
+        req.user._id,
+        { email },
+        { new: true }
+      );
+      if (response) return res.status(200).json({ response });
+    } catch (err) {
+      return next(err);
+    }
+  },
+];
 
 exports.delete = async (req, res, next) => {};
 
@@ -119,3 +195,18 @@ exports.login = [
     )(req, res);
   },
 ];
+
+const changePassword = () => {
+  bcrypt.compare(password, user.password, (err, res) => {
+    if (res) {
+      return done(null, user, {
+        message: `Welcome back ${user.name}!`,
+      });
+    } else {
+      return done(null, false, {
+        message: "Incorrect password",
+        name: "password",
+      });
+    }
+  });
+};
